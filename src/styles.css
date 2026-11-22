@@ -260,7 +260,7 @@ h1,h2,h3,p {
 
 .metric-grid {
   display:grid;
-  grid-template-columns:repeat(4,minmax(0,1fr));
+  grid-template-columns:repeat(5,minmax(0,1fr));
   gap:16px;
   margin-bottom:30px
 }
@@ -306,6 +306,11 @@ h1,h2,h3,p {
 .metric-qualified .metric-icon {
   color:#319f79;
   background:#e9f9f1
+}
+
+.metric-lost .metric-icon {
+  color:#c76b76;
+  background:#fff0f0;
 }
 
 .metric-value {
@@ -953,7 +958,12 @@ button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible {
     min-height:130px;
     padding:15px
   }
-  .metric-value {
+  .metric-lost .metric-icon {
+  color:#c76b76;
+  background:#fff0f0;
+}
+
+.metric-value {
     font-size:27px
   }
   .panel-heading,.toolbar {
