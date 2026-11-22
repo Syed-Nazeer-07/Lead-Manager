@@ -31,7 +31,6 @@ A focused, full-stack lead-management app built for the **Meru Technosoft Full S
 git clone https://github.com/Syed-Nazeer-07/Lead-Manager.git
 cd Lead-Manager
 npm install
-cp .env.example .env  # Windows PowerShell: Copy-Item .env.example .env
 npm run dev
 ```
 
@@ -40,7 +39,7 @@ npm run dev
 
 The database is created automatically at `./data/leads.sqlite` when the backend first runs. **Do not commit** local database files or `.env` files. The app starts with an empty pipeline by design.
 
-Note: the backend reads `PORT`/`DB_PATH` from the environment. The `.env.example` is a reference; if you want to use a custom `.env` in local development, start Node with `--env-file=.env`, or set the variables in your shell.
+Note: the backend reads `PORT` and `DB_PATH` from process environment variables. `.env.example` documents supported variables; it is not automatically loaded. For non-default settings, export environment variables before starting the app.
 
 ## Build and test
 
