@@ -10,7 +10,7 @@ A focused, full-stack lead-management app built for the **Meru Technosoft Full S
 - Sort by newest, oldest, name, or company; 10 leads per page.
 - Live pipeline counts for total leads and each status.
 - Mobile-friendly table/cards, loading/empty/error states, accessible forms, keyboard-closeable dialogs.
-- SQLite database with indexes and parameterized queries.
+- PostgreSQL in production and SQLite locally, with indexed parameterized queries.
 - API integration tests covering CRUD, validation, filtering, pagination, and status counts.
 
 ## Tech stack
@@ -19,7 +19,7 @@ A focused, full-stack lead-management app built for the **Meru Technosoft Full S
 |---|---|---|
 | Frontend | React 19 + Vite 8 | Fast, component-based UI; small bundle and straightforward development |
 | Backend | Node.js + Express 5 | Simple REST API with predictable middleware and error handling |
-| Database | SQLite using Node.js `node:sqlite` | Small, embedded, file-backed database; no separate database server needed |
+| Database | PostgreSQL on Render / SQLite locally | Persistent hosted storage and easy local development |
 | UI | Custom CSS + Lucide React | Responsive design without a heavy component framework |
 | Tests | Node.js built-in test runner | Lightweight API integration coverage |
 
@@ -85,7 +85,7 @@ Successful creation returns **201**, deletion **204**; invalid input returns **4
 - Leads may share an email address (different campaigns or contacts can reference the same address).
 - Server-side sorting uses a fixed allowlist, and SQL values are parameterized.
 - Leads are initially empty; no fabricated demo records are inserted.
-- The SQLite database needs **persistent storage** when deployed. A platform with an ephemeral filesystem can lose leads on restart. For production use, migrate to managed PostgreSQL or configure a persistent disk.
+- Hosting uses `DATABASE_URL` for PostgreSQL; local development uses SQLite. The public demo is shared, unauthenticated, and must be used with fictional leads only. Render's free PostgreSQL instance expires December 22, 2026.
 
 ## Improvements with more time
 
@@ -97,3 +97,7 @@ Successful creation returns **201**, deletion **204**; invalid input returns **4
 ## Notes
 
 Most important engineering decision: prioritize a reliable CRUD flow and explicit backend validation over optional feature complexity. The UI treats zero results, API failures, and destructive actions as first-class states instead of happy-path-only cases.
+
+## Hosting
+
+The React UI and Express API are served together by a Render Node web service using a free managed PostgreSQL database. Build: `npm install --include=dev --no-audit --no-fund && npm run build`; start: `npm start`. Set `DATABASE_URL` on the Render service using the database's internal connection URL and `VITE_PUBLIC_DEMO=true` at build time. Never commit connection secrets.

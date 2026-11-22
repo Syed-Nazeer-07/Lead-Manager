@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { validateLead } from '../server/validation.js';
 import { ArrowDown, ArrowLeft, ArrowRight, Building2, Check, ChevronDown, CircleAlert, ContactRound, Inbox, LayoutDashboard, LoaderCircle, Mail, Pencil, Plus, Search, SlidersHorizontal, Trash2, Users, X } from 'lucide-react';
 const STATUSES = ['New', 'Contacted', 'Qualified', 'Lost'];
@@ -47,21 +47,34 @@ function formatDate(value) {
     return new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 function Modal({ title, description, children, onClose }) {
-    useEffect(() => {
-        const onKey = event => { if (event.key === 'Escape')
-            onClose(); };
-        window.addEventListener('keydown', onKey);
-        const original = document.body.style.overflow;
-        document.body.style.overflow = 'hidden';
-        return () => { window.removeEventListener('keydown', onKey); document.body.style.overflow = original; };
-    }, [onClose]);
-    return (<div className="modal-backdrop" onMouseDown={event => { if (event.target === event.currentTarget)
-        onClose(); }}>
-      <section className="modal-panel" role="dialog" aria-modal="true" aria-labelledby="dialog-title" aria-describedby="dialog-description">
-        <div className="modal-heading"><div><h2 id="dialog-title">{title}</h2><p id="dialog-description">{description}</p></div><button className="icon-btn" aria-label="Close dialog" onClick={onClose}><X size={18}/></button></div>
-        {children}
-      </section>
-    </div>);
+  const panelRef = useRef(null);
+  useEffect(() => {
+    const previous = document.activeElement;
+    const original = document.body.style.overflow;
+    document.body.style.overflow='hidden';
+    const focusable=() => [...(panelRef.current?.querySelectorAll('button:not([disabled]),input:not([disabled]),select:not([disabled])') || [])];
+    const first=focusable().find(e=>e.tagName==='INPUT') || focusable()[0];
+    first?.focus();
+    const onKey=event => {
+      if (event.key==='Escape') onClose();
+      if (event.key!=='Tab') return;
+      const elements=focusable();
+      if (!elements.length) return event.preventDefault();
+      if (event.shiftKey && document.activeElement===elements[0]) {
+        event.preventDefault(); elements[elements.length-1].focus();
+      } else if (!event.shiftKey && document.activeElement===elements[elements.length-1]) {
+        event.preventDefault(); elements[0].focus();
+      }
+    };
+    window.addEventListener('keydown',onKey);
+    return () => { window.removeEventListener('keydown',onKey); document.body.style.overflow=original; previous?.focus?.(); };
+  },[onClose]);
+  return <div className="modal-backdrop" onMouseDown={event => { if (event.target===event.currentTarget) onClose(); }}>
+    <section className="modal-panel" ref={panelRef} role="dialog" aria-modal="true" aria-labelledby="dialog-title" aria-describedby="dialog-description">
+      <div className="modal-heading"><div><h2 id="dialog-title">{title}</h2><p id="dialog-description">{description}</p></div><button className="icon-btn" aria-label="Close dialog" onClick={onClose}><X size={18}/></button></div>
+      {children}
+    </section>
+  </div>;
 }
 function LeadForm({ lead, onClose, onSaved }) {
     const [fields, setFields] = useState(lead ? Object.fromEntries(Object.keys(EMPTY).map(key => [key, lead[key]])) : EMPTY);
@@ -181,6 +194,7 @@ export default function App() {
     return <div className="app-shell">
     <header className="site-header"><div className="container header-inner"><div className="brand"><div className="brand-mark"><LayoutDashboard size={19} strokeWidth={2.4}/></div><span>leads<span className="brand-muted">pace</span><span className="brand-dot">.</span></span></div><div className="header-right"><span className="header-divider"/><span className="workspace-avatar">LM</span><div className="workspace-meta"><strong>Lead workspace</strong><small>Personal dashboard</small></div><ChevronDown size={15} color="#94a3b8"/></div></div></header>
     <main className="container main-content">
+    {import.meta.env.VITE_PUBLIC_DEMO === 'true' && <div className="demo-notice" role="note"><CircleAlert size={16}/><span><strong>Shared demonstration.</strong> Anyone can view and edit entries. Use fictional contact details only.</span></div>}
       <div className="breadcrumb"><span>Workspace</span><span className="crumb-slash">/</span><strong>Overview</strong></div>
       <section className="page-intro"><div><span className="eyebrow"><span className="eyebrow-dot"/> YOUR SALES PIPELINE</span><h1>Every opportunity, <span>in one place.</span></h1><p>Stay organized, follow up on time, and turn conversations into connections.</p></div><button className="btn btn-primary create-main" onClick={() => setDialog({ kind: 'create' })}><Plus size={18}/> Add new lead</button></section>
       <section className="metric-grid" aria-label="Pipeline overview">{metricCards.map(card => <article className={`metric-card metric-${card.tone}`} key={card.key}><div className="metric-upper"><span>{card.label}</span><span className="metric-icon"><card.icon size={18} strokeWidth={2}/></span></div><div className="metric-value">{card.count.toLocaleString()}</div><div className="metric-note">{card.note}</div></article>)}</section>

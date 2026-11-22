@@ -7,10 +7,10 @@ import { join } from 'node:path';
 const directory = mkdtempSync(join(tmpdir(), 'leads-test-'));
 process.env.DB_PATH = join(directory, 'test.sqlite');
 const { app } = await import('./app.js');
-const { db } = await import('./db.js');
+const { closeStore } = await import('./repository.js');
 const server = app.listen(0);
 const base = `http://127.0.0.1:${server.address().port}`;
-after(() => { server.close(); db.close(); rmSync(directory, { recursive: true, force: true }); });
+after(async () => { await new Promise(resolve => server.close(resolve)); await closeStore(); rmSync(directory, { recursive: true, force: true }); });
 
 const sample = { name: 'Aisha Khan', email: 'aisha@example.com', phone: '+91 98765 43210', company: 'Aurora Labs', source: 'Referral', status: 'New' };
 async function request(path, method = 'GET', body) {
@@ -49,4 +49,21 @@ test('backend rejects invalid data, IDs and query parameters', async () => {
   assert.equal((await request('/api/leads?sort=leads%3Bdrop')).status, 400);
   assert.equal((await request('/api/leads/abc')).status, 400);
   assert.equal((await request('/api/leads/99999', 'DELETE')).status, 404);
+});
+
+test('literal wildcard search, not SQL pattern injection',async () => {
+  const a=await request('/api/leads','POST',{...sample,name:'Percent % Test'});
+  const b=await request('/api/leads','POST',{...sample,name:'Underscore _ Test'});
+  assert.equal(a.status,201);
+  assert.equal(b.status,201);
+  assert.equal((await request('/api/leads?search=%25')).body.total,1);
+  assert.equal((await request('/api/leads?search=_')).body.total,1);
+  await request('/api/leads/'+a.body.id,'DELETE');
+  await request('/api/leads/'+b.body.id,'DELETE');
+});
+test('malformed and oversize request body rejected',async () => {
+  const bad=await fetch(base+'/api/leads',{method:'POST',headers:{'content-type':'application/json'},body:'{bad'});
+  assert.equal(bad.status,400);
+  const oversized=await fetch(base+'/api/leads',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({x:'a'.repeat(20000)})});
+  assert.equal(oversized.status,413);
 });
