@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { validateLead } from '../server/validation.js';
 import {
-  ArrowDown, ArrowLeft, ArrowRight, ArrowUpRight, Building2, Check, ChevronDown,
-  CircleAlert, ClipboardList, ContactRound, Ellipsis, Inbox, LayoutDashboard,
-  LoaderCircle, Mail, Menu, Pencil, Plus, Search, SlidersHorizontal, Trash2, Users, X
+  ArrowDown, ArrowLeft, ArrowRight, Building2, Check, ChevronDown,
+  CircleAlert, ContactRound, Inbox, LayoutDashboard,
+  LoaderCircle, Mail, Pencil, Plus, Search, SlidersHorizontal, Trash2, Users, X
 } from 'lucide-react';
 
 const STATUSES = ['New', 'Contacted', 'Qualified', 'Lost'];
@@ -82,6 +83,12 @@ function LeadForm({ lead, onClose, onSaved }) {
   const submit = async event => {
     event.preventDefault();
     setMessage('');
+    const validation = validateLead(fields);
+    if (Object.keys(validation.errors).length > 0) {
+      setErrors(validation.errors);
+      setMessage('Please correct the highlighted fields.');
+      return;
+    }
     setSaving(true);
     try {
       await api(lead ? `/api/leads/${lead.id}` : '/api/leads', { method: lead ? 'PUT' : 'POST', body: JSON.stringify(fields) });
@@ -101,7 +108,7 @@ function LeadForm({ lead, onClose, onSaved }) {
             ['phone', 'Phone number', 'tel', '+1 (555) 000-0000'],
             ['company', 'Company', 'text', 'e.g. Acme Inc.']
           ].map(([key, label, type, placeholder]) => (
-            <label className="field" key={key}><span>{label} <em>*</em></span><input autoComplete={key === 'name' ? 'name' : key === 'email' ? 'email' : key === 'phone' ? 'tel' : 'organization'} type={type} maxLength={key === 'email' ? 254 : key === 'phone' ? 25 : 120} value={fields[key]} onChange={event => update(key, event.target.value)} placeholder={placeholder} aria-invalid={Boolean(errors[key])} required />{errors[key] && <small className="field-error">{errors[key]}</small>}</label>
+            <label className="field" key={key}><span>{label} <em>*</em></span><input autoComplete={key === 'name' ? 'name' : key === 'email' ? 'email' : key === 'phone' ? 'tel' : 'organization'} type={type} maxLength={key === 'email' ? 254 : key === 'phone' ? 25 : key === 'name' ? 100 : 120} value={fields[key]} onChange={event => update(key, event.target.value)} placeholder={placeholder} aria-invalid={Boolean(errors[key])} required />{errors[key] && <small className="field-error">{errors[key]}</small>}</label>
           ))}
           <label className="field"><span>Lead source <em>*</em></span><select value={fields.source} onChange={event => update('source', event.target.value)} aria-invalid={Boolean(errors.source)}>{SOURCES.map(item => <option key={item}>{item}</option>)}</select>{errors.source && <small className="field-error">{errors.source}</small>}</label>
           <label className="field"><span>Status <em>*</em></span><select value={fields.status} onChange={event => update('status', event.target.value)} aria-invalid={Boolean(errors.status)}>{STATUSES.map(item => <option key={item}>{item}</option>)}</select>{errors.status && <small className="field-error">{errors.status}</small>}</label>
