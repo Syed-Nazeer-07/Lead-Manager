@@ -179,7 +179,8 @@ export default function App() {
     { key: 'total', label: 'Total leads', count: stats.total, icon: Users, tone: 'all', note: 'Across your pipeline' },
     { key: 'New', label: 'New leads', count: stats.byStatus.New, icon: Inbox, tone: 'new', note: 'Ready to reach out' },
     { key: 'Contacted', label: 'Contacted', count: stats.byStatus.Contacted, icon: Mail, tone: 'contacted', note: 'In conversation' },
-    { key: 'Qualified', label: 'Qualified', count: stats.byStatus.Qualified, icon: Check, tone: 'qualified', note: 'Promising opportunities' }
+    { key: 'Qualified', label: 'Qualified', count: stats.byStatus.Qualified, icon: Check, tone: 'qualified', note: 'Promising opportunities' },
+    { key: 'Lost', label: 'Lost', count: stats.byStatus.Lost, icon: X, tone: 'lost', note: 'No longer active' }
   ];
 
   return <div className="app-shell">
